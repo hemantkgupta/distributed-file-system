@@ -1,0 +1,26 @@
+rootProject.name = 'distributed-file-system'
+
+// Foundational
+include 'dfs-common'
+
+// Phase 1 — Foundation
+include 'dfs-crush'
+include 'dfs-placement'
+include 'dfs-lease'
+include 'dfs-node'
+
+// Phase 2 — Storage backend
+include 'dfs-allocator'
+include 'dfs-storage'
+include 'dfs-erasure'
+
+// Phase 3 — Control plane
+include 'dfs-mds'
+include 'dfs-monitor'
+include 'dfs-custodian'
+include 'dfs-qos'
+
+// Phase 4 — Ops, simulator, security
+include 'dfs-simulator'
+include 'dfs-metrics'
+include 'dfs-security'

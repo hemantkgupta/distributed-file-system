@@ -1,0 +1,148 @@
+allprojects {
+    group = 'com.hkg.distributedfilesystem'
+    version = '0.1.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java-library'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    dependencies {
+        testImplementation platform('org.junit:junit-bom:5.10.2')
+        testImplementation 'org.junit.jupiter:junit-jupiter'
+        testImplementation 'org.assertj:assertj-core:3.25.3'
+        testRuntimeOnly  'org.junit.platform:junit-platform-launcher'
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    compileJava.options.encoding     = 'UTF-8'
+    compileTestJava.options.encoding = 'UTF-8'
+}
+
+// =====================================================================
+// Module dependency graph
+// =====================================================================
+// Phase 1 — Foundation: common, crush, placement, lease, node
+// Phase 2 — Storage backend: allocator, storage, erasure
+// Phase 3 — Control plane: mds, monitor, custodian, qos
+// Phase 4 — Ops + simulator + security: simulator, metrics, security
+
+// ---- Phase 1: Foundation ----
+project(':dfs-crush') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-placement') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-crush')
+    }
+}
+
+project(':dfs-lease') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-node') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-crush')
+        implementation project(':dfs-placement')
+        implementation project(':dfs-lease')
+    }
+}
+
+// ---- Phase 2: Storage backend ----
+project(':dfs-allocator') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-storage') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-allocator')
+    }
+}
+
+project(':dfs-erasure') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+// ---- Phase 3: Control plane ----
+project(':dfs-mds') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-monitor') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-lease')
+    }
+}
+
+project(':dfs-qos') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-custodian') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-monitor')
+        implementation project(':dfs-qos')
+    }
+}
+
+// ---- Phase 4: Ops, simulator, security ----
+project(':dfs-metrics') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-security') {
+    dependencies {
+        api project(':dfs-common')
+    }
+}
+
+project(':dfs-simulator') {
+    dependencies {
+        api project(':dfs-common')
+        implementation project(':dfs-crush')
+        implementation project(':dfs-placement')
+        implementation project(':dfs-lease')
+        implementation project(':dfs-node')
+        implementation project(':dfs-allocator')
+        implementation project(':dfs-storage')
+        implementation project(':dfs-erasure')
+        implementation project(':dfs-mds')
+        implementation project(':dfs-monitor')
+        implementation project(':dfs-custodian')
+        implementation project(':dfs-qos')
+        implementation project(':dfs-metrics')
+        implementation project(':dfs-security')
+    }
+}
