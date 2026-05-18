@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfs-osd
+  namespace: dfs
+  labels:
+    app: dfs-osd
+spec:
+  replicas: 9
+  selector:
+    matchLabels:
+      app: dfs-osd
+  template:
+    metadata:
+      labels:
+        app: dfs-osd
+    spec:
+      containers:
+        - name: osd
+          image: hkg/dfs-osd:0.1.0
+          ports:
+            - containerPort: 6801
+              name: osd
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dfs-osd
+  namespace: dfs
+spec:
+  selector:
+    app: dfs-osd
+  ports:
+    - port: 6801
+      targetPort: 6801
+      name: osd

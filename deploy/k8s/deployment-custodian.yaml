@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfs-custodian
+  namespace: dfs
+  labels:
+    app: dfs-custodian
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dfs-custodian
+  template:
+    metadata:
+      labels:
+        app: dfs-custodian
+    spec:
+      containers:
+        - name: custodian
+          image: hkg/dfs-custodian:0.1.0
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "4Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dfs-custodian
+  namespace: dfs
+spec:
+  selector:
+    app: dfs-custodian
+  ports:
+    - port: 8080
+      targetPort: 8080

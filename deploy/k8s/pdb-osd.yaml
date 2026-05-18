@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: dfs-osd-pdb
+  namespace: dfs
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: dfs-osd

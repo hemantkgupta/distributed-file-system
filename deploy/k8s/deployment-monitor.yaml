@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dfs-monitor
+  namespace: dfs
+  labels:
+    app: dfs-monitor
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: dfs-monitor
+  template:
+    metadata:
+      labels:
+        app: dfs-monitor
+    spec:
+      containers:
+        - name: monitor
+          image: hkg/dfs-monitor:0.1.0
+          ports:
+            - containerPort: 6789
+              name: monitor
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dfs-monitor
+  namespace: dfs
+spec:
+  selector:
+    app: dfs-monitor
+  ports:
+    - port: 6789
+      targetPort: 6789
+      name: monitor

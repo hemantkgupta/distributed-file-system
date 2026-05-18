@@ -1,0 +1,70 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dfs-default-deny
+  namespace: dfs
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dfs-osd-allow
+  namespace: dfs
+spec:
+  podSelector:
+    matchLabels:
+      app: dfs-osd
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: dfs-mds
+        - podSelector:
+            matchLabels:
+              app: dfs-monitor
+        - podSelector:
+            matchLabels:
+              app: dfs-custodian
+      ports:
+        - protocol: TCP
+          port: 6801
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: dfs-osd
+        - podSelector:
+            matchLabels:
+              app: dfs-monitor
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dfs-mds-allow
+  namespace: dfs
+spec:
+  podSelector:
+    matchLabels:
+      app: dfs-mds
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 6800
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: dfs-osd
+        - podSelector:
+            matchLabels:
+              app: dfs-monitor
