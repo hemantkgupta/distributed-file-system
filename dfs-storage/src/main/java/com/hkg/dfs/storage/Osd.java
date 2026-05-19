@@ -7,6 +7,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.zip.CRC32C;
 
@@ -25,6 +26,7 @@ public final class Osd {
     private final ConcurrentSkipListMap<String, byte[]> data = new ConcurrentSkipListMap<>();
     private final Map<String, Integer> crc = new HashMap<>();
     private final Deque<WalEntry> wal = new ArrayDeque<>();
+    private final Map<ObjectId, Location> objectLocations = new HashMap<>();
 
     public synchronized void writeLarge(String extentId, long offset, byte[] bytes) {
         if (bytes == null) throw new IllegalArgumentException("bytes");
@@ -42,16 +44,22 @@ public final class Osd {
         wal.add(new WalEntry(obj, Arrays.copyOf(bytes, bytes.length)));
     }
 
-    public synchronized int flushDeferred(String extentId, long baseOffset) {
-        int written = 0;
+    public synchronized Map<ObjectId, Location> flushDeferred(String extentId, long baseOffset) {
+        Map<ObjectId, Location> flushed = new HashMap<>();
         long off = baseOffset;
         while (!wal.isEmpty()) {
             WalEntry e = wal.poll();
             writeLarge(extentId, off, e.bytes);
+            Location loc = new Location(extentId, off, e.bytes.length);
+            objectLocations.put(e.obj, loc);
+            flushed.put(e.obj, loc);
             off += e.bytes.length;
-            written++;
         }
-        return written;
+        return flushed;
+    }
+
+    public synchronized Optional<Location> lookup(ObjectId obj) {
+        return Optional.ofNullable(objectLocations.get(obj));
     }
 
     public synchronized byte[] read(String extentId, long offset, int length) {
@@ -87,4 +95,5 @@ public final class Osd {
     }
 
     private record WalEntry(ObjectId obj, byte[] bytes) {}
+    public record Location(String extentId, long offset, int length) {}
 }

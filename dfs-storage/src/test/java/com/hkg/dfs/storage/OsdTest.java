@@ -51,8 +51,8 @@ class OsdTest {
         Osd osd = new Osd();
         osd.writeSmall(ObjectId.of("o1"), new byte[]{1, 2});
         osd.writeSmall(ObjectId.of("o2"), new byte[]{3, 4, 5});
-        int n = osd.flushDeferred("e1", 0);
-        assertThat(n).isEqualTo(2);
+        var flushed = osd.flushDeferred("e1", 0);
+        assertThat(flushed.size()).isEqualTo(2);
         assertThat(osd.walSize()).isZero();
     }
 
@@ -146,9 +146,17 @@ class OsdTest {
     @Test
     void deferredFlushCorrectness() {
         Osd osd = new Osd();
-        osd.writeSmall(ObjectId.of("o1"), new byte[]{7});
-        osd.writeSmall(ObjectId.of("o2"), new byte[]{8});
-        osd.flushDeferred("ext", 100);
+        ObjectId o1 = ObjectId.of("o1");
+        ObjectId o2 = ObjectId.of("o2");
+        osd.writeSmall(o1, new byte[]{7});
+        osd.writeSmall(o2, new byte[]{8});
+        var flushed = osd.flushDeferred("ext", 100);
+        // assert returned map
+        assertThat(flushed.get(o1)).isEqualTo(new Osd.Location("ext", 100, 1));
+        assertThat(flushed.get(o2)).isEqualTo(new Osd.Location("ext", 101, 1));
+        // assert lookup
+        assertThat(osd.lookup(o1)).contains(new Osd.Location("ext", 100, 1));
+        assertThat(osd.lookup(o2)).contains(new Osd.Location("ext", 101, 1));
         // first entry at offset 100, second at 101
         assertThat(osd.read("ext", 100, 1)).containsExactly(7);
         assertThat(osd.read("ext", 101, 1)).containsExactly(8);

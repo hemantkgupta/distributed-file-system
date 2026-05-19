@@ -118,4 +118,21 @@ class MdsClusterTest {
         assertThatThrownBy(() -> m.rename("/a", "/b"))
                 .isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void mkdirOnMissingParentFails() {
+        MdsCluster m = new MdsCluster();
+        assertThatThrownBy(() -> m.mkdir("/a/b/c"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("parent directory missing: /a/b");
+    }
+
+    @Test
+    void createOnNonDirParentFails() {
+        MdsCluster m = new MdsCluster();
+        m.create("/a");
+        assertThatThrownBy(() -> m.create("/a/b"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("parent is not a directory: /a");
+    }
 }

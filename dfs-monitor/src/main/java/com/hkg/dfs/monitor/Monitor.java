@@ -8,8 +8,10 @@ import com.hkg.dfs.lease.LeaseService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -23,6 +25,7 @@ public final class Monitor {
     private final ConcurrentHashMap<OsdId, Integer> missedBeats = new ConcurrentHashMap<>();
     private final Map<PgId, List<OsdId>> pgMap = new HashMap<>();
     private final List<DurabilityEvent> events = new ArrayList<>();
+    private final Set<PgId> reportedBelowFloor = new HashSet<>();
     private long mapVersion = 0;
     private final int missThreshold;
     private final int durabilityFloor;
@@ -82,7 +85,11 @@ public final class Monitor {
                 if (status.getOrDefault(o, OsdStatus.UP) == OsdStatus.UP) alive++;
             }
             if (alive < durabilityFloor) {
-                events.add(new DurabilityEvent(e.getKey(), alive, durabilityFloor));
+                if (reportedBelowFloor.add(e.getKey())) {
+                    events.add(new DurabilityEvent(e.getKey(), alive, durabilityFloor));
+                }
+            } else {
+                reportedBelowFloor.remove(e.getKey());
             }
         }
     }

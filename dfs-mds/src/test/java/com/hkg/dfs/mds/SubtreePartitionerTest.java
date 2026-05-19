@@ -65,4 +65,13 @@ class SubtreePartitionerTest {
         p.assign("/b", 1);
         assertThat(p.subtreeCount()).isEqualTo(2);
     }
+
+    @Test
+    void boundaryMatching() {
+        SubtreePartitioner p = new SubtreePartitioner();
+        p.assign("/foo", 1);
+        assertThat(p.ownerOf("/foo")).contains(1);
+        assertThat(p.ownerOf("/foo/bar")).contains(1);
+        assertThat(p.ownerOf("/foo-bar")).isEmpty();
+    }
 }

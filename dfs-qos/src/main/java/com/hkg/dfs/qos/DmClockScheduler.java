@@ -40,14 +40,13 @@ public final class DmClockScheduler {
         QosClass c = classes.get(className);
         if (c == null) throw new IllegalStateException("no class: " + className);
         CompletableFuture<Void> done = new CompletableFuture<>();
-        queues.get(className).add(new Op(op, done));
         Tags t = tags.get(className);
         double now = virtualTime;
-        tags.put(className, new Tags(
-                Math.max(t.r, now) + (c.reservation() > 0 ? 1.0 / c.reservation() : Double.POSITIVE_INFINITY),
-                Math.max(t.w, now) + 1.0 / c.weight(),
-                Math.max(t.l, now) + 1.0 / c.limit()
-        ));
+        double reqR = Math.max(t.r, now) + (c.reservation() > 0 ? 1.0 / c.reservation() : Double.POSITIVE_INFINITY);
+        double reqW = Math.max(t.w, now) + 1.0 / c.weight();
+        double reqL = Math.max(t.l, now) + 1.0 / c.limit();
+        tags.put(className, new Tags(reqR, reqW, reqL));
+        queues.get(className).add(new Op(op, done, reqR, reqW, reqL));
         return done;
     }
 
@@ -61,21 +60,23 @@ public final class DmClockScheduler {
         String chosen = null;
         double bestR = Double.POSITIVE_INFINITY;
         for (var e : classes.entrySet()) {
-            if (queues.get(e.getKey()).isEmpty()) continue;
-            Tags t = tags.get(e.getKey());
-            if (t.r <= virtualTime && t.r < bestR) {
-                bestR = t.r;
+            var q = queues.get(e.getKey());
+            if (q.isEmpty()) continue;
+            Op head = q.peek();
+            if (head.r <= virtualTime && head.r < bestR) {
+                bestR = head.r;
                 chosen = e.getKey();
             }
         }
         if (chosen == null) {
             double bestW = Double.POSITIVE_INFINITY;
             for (var e : classes.entrySet()) {
-                if (queues.get(e.getKey()).isEmpty()) continue;
-                Tags t = tags.get(e.getKey());
-                if (t.l > virtualTime) continue;
-                if (t.w < bestW) {
-                    bestW = t.w;
+                var q = queues.get(e.getKey());
+                if (q.isEmpty()) continue;
+                Op head = q.peek();
+                if (head.l > virtualTime) continue;
+                if (head.w < bestW) {
+                    bestW = head.w;
                     chosen = e.getKey();
                 }
             }
@@ -103,5 +104,5 @@ public final class DmClockScheduler {
 
     private record Tags(double r, double w, double l) {}
 
-    private record Op(Runnable run, CompletableFuture<Void> done) {}
+    private record Op(Runnable run, CompletableFuture<Void> done, double r, double w, double l) {}
 }

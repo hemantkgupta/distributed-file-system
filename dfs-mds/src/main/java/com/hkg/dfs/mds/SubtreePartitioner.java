@@ -20,11 +20,18 @@ public final class SubtreePartitioner {
     public synchronized Optional<Integer> ownerOf(String path) {
         String best = null;
         for (String k : ownership.keySet()) {
-            if (path.startsWith(k)) {
+            if (matches(path, k)) {
                 if (best == null || k.length() > best.length()) best = k;
             }
         }
         return best == null ? Optional.empty() : Optional.of(ownership.get(best));
+    }
+
+    private boolean matches(String path, String prefix) {
+        if (path.equals(prefix)) return true;
+        if (prefix.equals("/")) return true;
+        String normPrefix = prefix.endsWith("/") ? prefix : prefix + "/";
+        return path.startsWith(normPrefix);
     }
 
     public synchronized void migrate(String subtree, int fromMds, int toMds) {

@@ -19,15 +19,18 @@ public final class MdsCluster {
 
     public Inode mkdir(String path) {
         if (path == null || !path.startsWith("/")) throw new IllegalArgumentException("path");
+        long parentId = checkParentAndGetId(path);
         long id = inodeSeq.getAndIncrement();
-        Inode inode = new Inode(id, parentInodeFor(path), nameOf(path), InodeType.DIR);
+        Inode inode = new Inode(id, parentId, nameOf(path), InodeType.DIR);
         inodes.put(path, inode);
         return inode;
     }
 
     public Inode create(String path) {
+        if (path == null || !path.startsWith("/")) throw new IllegalArgumentException("path");
+        long parentId = checkParentAndGetId(path);
         long id = inodeSeq.getAndIncrement();
-        Inode inode = new Inode(id, parentInodeFor(path), nameOf(path), InodeType.FILE);
+        Inode inode = new Inode(id, parentId, nameOf(path), InodeType.FILE);
         inodes.put(path, inode);
         return inode;
     }
@@ -69,19 +72,28 @@ public final class MdsCluster {
     }
 
     public void rename(String fromPath, String toPath) {
+        if (toPath == null || !toPath.startsWith("/")) throw new IllegalArgumentException("toPath");
         Inode prev = inodes.remove(fromPath);
         if (prev == null) throw new IllegalStateException("missing: " + fromPath);
-        Inode renamed = new Inode(prev.inodeId(), parentInodeFor(toPath), nameOf(toPath), prev.type());
+        long parentId = checkParentAndGetId(toPath);
+        Inode renamed = new Inode(prev.inodeId(), parentId, nameOf(toPath), prev.type());
         inodes.put(toPath, renamed);
         // capability invalidated by rename
         caps.remove(fromPath);
     }
 
-    private long parentInodeFor(String path) {
+    private long checkParentAndGetId(String path) {
         int slash = path.lastIndexOf('/');
         if (slash <= 0) return 0;
-        Inode parent = inodes.get(path.substring(0, slash));
-        return parent == null ? 0 : parent.inodeId();
+        String parentPath = path.substring(0, slash);
+        Inode parent = inodes.get(parentPath);
+        if (parent == null) {
+            throw new IllegalStateException("parent directory missing: " + parentPath);
+        }
+        if (parent.type() != InodeType.DIR) {
+            throw new IllegalStateException("parent is not a directory: " + parentPath);
+        }
+        return parent.inodeId();
     }
 
     private String nameOf(String path) {

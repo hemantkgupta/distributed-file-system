@@ -4,6 +4,7 @@ import com.hkg.dfs.qos.DmClockScheduler;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Stateless control loop. For every scanner work item, dispatches a
@@ -18,7 +19,7 @@ public final class Custodian {
 
     private final DmClockScheduler scheduler;
     private final Map<PriorityClass, String> classMap = new HashMap<>();
-    private final Map<String, Integer> dispatched = new HashMap<>();
+    private final Map<String, Integer> dispatched = new ConcurrentHashMap<>();
 
     public Custodian(DmClockScheduler scheduler) {
         this.scheduler = scheduler;

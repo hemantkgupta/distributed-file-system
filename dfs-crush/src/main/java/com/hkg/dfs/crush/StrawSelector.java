@@ -16,11 +16,12 @@ public final class StrawSelector {
             throw new IllegalArgumentException("no candidates");
         }
         CrushBucket best = null;
-        long bestStraw = Long.MIN_VALUE;
+        double bestStraw = -Double.MAX_VALUE;
         for (CrushBucket c : candidates) {
             long h = hash(seed, c.name().hashCode(), replicaIdx);
-            // multiply hash by weight to bias selection
-            long straw = h ^ ((long) c.weight() * 0x9E3779B97F4A7C15L);
+            double u = (double) (h & 0x7FFFFFFFFFFFFFFFL) / Long.MAX_VALUE;
+            if (u <= 0.0) u = 1e-15;
+            double straw = Math.log(u) / c.weight();
             if (straw > bestStraw) {
                 bestStraw = straw;
                 best = c;
